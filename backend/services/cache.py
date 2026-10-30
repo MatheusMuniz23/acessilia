@@ -60,7 +60,8 @@ def processing_cache_configuration() -> dict[str, Any]:
         "openrouter_base_url", "openrouter_max_tokens", "pipeline_engine",
         "fusion_mode", "fusion_secondary_provider", "fusion_hybrid_provider",
         "legacy_unicode_repair", "inline_math_detection", "formula_text_agreement_min",
-        "toolbox_base_url", "toolbox_base_urls", "toolbox_provider", "toolbox_layout_provider",
+        "toolbox_base_url", "toolbox_base_urls", "toolbox_vlm_provider",
+        "toolbox_provider", "toolbox_layout_provider",
         "toolbox_pdf_provider", "toolbox_math_recognize_provider", "toolbox_math_provider",
         "toolbox_ocr_provider", "toolbox_page_ocr_provider", "toolbox_adjudicate_provider",
         "toolbox_orientation_provider", "toolbox_media_inspect_provider",
@@ -133,6 +134,16 @@ async def _read_cached(key: str, ttl: int) -> Any:
 
 async def set_cache(path: Path, payload: Any, extra: str = "") -> None:
     await _write_cached(_cache_key(path, extra), payload)
+
+
+async def drop_cache(path: Path, extra: str = "") -> None:
+    """Remove the entry for ``path``, if any; a run that must not be cached supersedes it."""
+    try:
+        await aiofiles.os.remove(str(_cache_path(_cache_key(path, extra))))
+    except OSError:
+        # Nothing to drop, or it cannot be dropped: a refused entry is
+        # refused again on read, so the run need not fail over it.
+        pass
 
 
 async def set_cache_bytes(content: bytes, payload: Any, extra: str = "") -> None:
